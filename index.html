@@ -44,47 +44,65 @@ button{font:inherit}
 <textarea id="note" placeholder="Ej.: este edificio es más bajo, tejado a cuatro aguas…"></textarea>
 <div class="row"><button class="btn" id="dc">Cancelar</button><button class="btn pri" id="dk">Guardar</button></div></div></div>
 <div id="toast" class="p"></div>
-<script src="mapa.js"></script>
+<script src="mapa.js?v=4"></script>
 <script>
 const M = window.__M, W = M.W, H = M.H;
 const $ = id => document.getElementById(id), vp = $('vp'), map = $('map');
 
 let s = 1, tx = 0, ty = 0;
 const MIN = () => Math.min(innerWidth / W, innerHeight / H) * 0.95, MAX = 8;
-const cache = new Map();                       // clave -> <img>
-const DPR = Math.min(window.devicePixelRatio || 1, 1.5);   // en móvil no hace falta más (memoria)
+const cache = new Map();                       // clave -> Image (decodificada a 512 px, nunca escalada en memoria)
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+const cv = document.createElement('canvas'); cv.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%'; map.appendChild(cv);
+const ctx = cv.getContext('2d');
+function resizeCanvas() { cv.width = Math.round(innerWidth * DPR); cv.height = Math.round(innerHeight * DPR); }
+resizeCanvas();
+let dq = 0; const reqDraw = () => { if (!dq) dq = requestAnimationFrame(() => { dq = 0; draw(); }); };
+function tilesFor(L, lv, x0, y0, x1, y1) {
+  const Lv = L.levels[lv], f = 2 ** lv, ts = L.T * f / L.s, out = [];
+  for (const [cx, cy] of Lv.tiles) {
+    const X = L.x + cx * ts, Y = L.y + cy * ts;
+    if (X > x1 || Y > y1 || X + ts < x0 || Y + ts < y0) continue;
+    const tw = Math.min(L.T, Lv.w - cx * L.T) * f / L.s, th = Math.min(L.T, Lv.h - cy * L.T) * f / L.s;
+    out.push({ key: `${L.name}/${lv}/${cx}_${cy}`, X, Y, tw, th });
+  }
+  return out;
+}
+function levelFor(L) { const ppx = s * DPR / L.s; let lv = Math.floor(Math.log2(1 / Math.max(ppx, 1e-6))); return Math.max(0, Math.min(L.levels.length - 1, lv)); }
+function view() { const x0 = -tx / s, y0 = -ty / s; return [x0, y0, x0 + innerWidth / s, y0 + innerHeight / s]; }
 function lod() {
-  const x0 = -tx / s, y0 = -ty / s, x1 = x0 + innerWidth / s, y1 = y0 + innerHeight / s;
-  const want = new Set();
-  M.layers.forEach((L, li) => {
+  const [x0, y0, x1, y1] = view(); const want = new Set();
+  M.layers.forEach(L => {
     if (s < L.minz) return;
-    // nivel: el más pequeño cuya resolución sigue siendo >= la de pantalla
-    const ppx = s * DPR / L.s;                 // píxeles de pantalla por píxel de la capa (nivel 0)
-    let lv = Math.floor(Math.log2(1 / Math.max(ppx, 1e-6))); lv = Math.max(0, Math.min(L.levels.length - 1, lv));
-    const Lv = L.levels[lv], f = 2 ** lv, ts = L.T * f / L.s;   // tamaño de tesela en píxeles de la base
-    for (const [cx, cy] of Lv.tiles) {
-      const tx0 = L.x + cx * ts, ty0 = L.y + cy * ts;
-      if (tx0 > x1 || ty0 > y1 || tx0 + ts < x0 || ty0 + ts < y0) continue;
-      const key = `${L.name}/${lv}/${cx}_${cy}`; want.add(key);
-      if (!cache.has(key)) {
-        const im = new Image(); im.decoding = 'async'; im.alt = '';
-        const tw = Math.min(L.T, Lv.w - cx * L.T) * f / L.s, th = Math.min(L.T, Lv.h - cy * L.T) * f / L.s;
-        im._g = [tx0, ty0, tw, th]; im.style.zIndex = li * 10 + (10 - lv); place(im);
-        im.onload = () => im.classList.add('ok');
-        im.src = `t/${key}.webp`; map.appendChild(im); cache.set(key, im);
-      }
+    const lv = levelFor(L);
+    for (const t of tilesFor(L, Math.min(L.levels.length - 1, lv + 2), x0, y0, x1, y1)) want.add(t.key);   // respaldo grueso
+    for (const t of tilesFor(L, lv, x0, y0, x1, y1)) {
+      want.add(t.key);
+      if (!cache.has(t.key)) { const im = new Image(); im.onload = reqDraw; im.src = `t/${t.key}.webp`; cache.set(t.key, im); }
     }
   });
-  // quita lo que ya no hace falta, pero solo cuando lo nuevo ha cargado (sin parpadeos)
-  clearTimeout(lod.t); lod.t = setTimeout(() => {
-    for (const [k, im] of cache) if (!want.has(k)) { im.removeAttribute('src'); im.remove(); cache.delete(k); }
-  }, 400);
-  if (cache.size > 160) for (const [k, im] of cache) if (!want.has(k)) { im.removeAttribute('src'); im.remove(); cache.delete(k); }
+  for (const k of want) if (!cache.has(k)) { const im = new Image(); im.onload = reqDraw; im.src = `t/${k}.webp`; cache.set(k, im); }
+  if (cache.size > 90) for (const [k, im] of cache) if (!want.has(k)) { im.onload = null; im.src = ''; cache.delete(k); }
+  draw();
+}
+function draw() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.imageSmoothingEnabled = s * DPR < 1.5; ctx.imageSmoothingQuality = 'high';
+  const [x0, y0, x1, y1] = view(), k = s * DPR;
+  M.layers.forEach(L => {
+    if (s < L.minz) return;
+    const lv = levelFor(L);
+    for (let l = Math.min(L.levels.length - 1, lv + 2); l >= lv; l--)        // de grueso a fino: sin huecos mientras carga
+      for (const t of tilesFor(L, l, x0, y0, x1, y1)) {
+        const im = cache.get(t.key); if (!im || !im.complete || !im.naturalWidth) continue;
+        const X = Math.floor((tx + t.X * s) * DPR), Y = Math.floor((ty + t.Y * s) * DPR);
+        const Wd = Math.ceil((tx + (t.X + t.tw) * s) * DPR) - X, Hd = Math.ceil((ty + (t.Y + t.th) * s) * DPR) - Y;
+        ctx.drawImage(im, X, Y, Wd, Hd);
+      }
+  });
 }
 let raf = 0;
-function place(im) { const [x, y, w, h] = im._g; const L = Math.floor(tx + x * s), T = Math.floor(ty + y * s);
-  im.style.left = L + 'px'; im.style.top = T + 'px'; im.style.width = (Math.ceil(tx + (x + w) * s) - L + 1) + 'px'; im.style.height = (Math.ceil(ty + (y + h) * s) - T + 1) + 'px'; }
-function apply() { map.classList.toggle('px', s * DPR >= 1.5); for (const im of cache.values()) place(im); cancelAnimationFrame(raf); raf = requestAnimationFrame(lod); hashSave(); scaleLabels(); }
+function apply() { cancelAnimationFrame(raf); raf = requestAnimationFrame(lod); hashSave(); scaleLabels(); }
 function fit() { s = MIN(); tx = (innerWidth - W * s) / 2; ty = (innerHeight - H * s) / 2; apply(); }
 function zoom(f, cx, cy) { const n = Math.max(MIN(), Math.min(MAX, s * f)); tx = cx - (cx - tx) * n / s; ty = cy - (cy - ty) * n / s; s = n; apply(); }
 let ht; function hashSave() { clearTimeout(ht); ht = setTimeout(() => { const cx = (innerWidth / 2 - tx) / s, cy = (innerHeight / 2 - ty) / s; try { history.replaceState(null, '', `#p${Math.round(cx)}-${Math.round(cy)}-${Math.round(s * 100)}`); } catch (e) {} }, 400); }
@@ -113,7 +131,7 @@ const up = e => {
 };
 vp.addEventListener('pointerup', up); vp.addEventListener('pointercancel', e => { start = null; $('rub').style.display = 'none'; P.delete(e.pointerId); ld = 0; });
 $('zi').onclick = () => zoom(1.6, innerWidth / 2, innerHeight / 2); $('zo').onclick = () => zoom(1 / 1.6, innerWidth / 2, innerHeight / 2); $('zf').onclick = fit;
-addEventListener('resize', () => { if (s < MIN()) fit(); else apply(); });
+addEventListener('resize', () => { resizeCanvas(); if (s < MIN()) fit(); else apply(); });
 
 // marcas (en píxeles de la imagen base)
 const KEY = 'marcas-vera'; let marks = []; try { marks = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) {}
