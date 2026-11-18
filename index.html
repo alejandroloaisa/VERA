@@ -62,7 +62,7 @@ button{font:inherit}
 #eye{right:12px;bottom:calc(84px + env(safe-area-inset-bottom));width:46px;height:46px;border:0;padding:0;display:grid;place-items:center;color:var(--paper);cursor:pointer;z-index:5}#eye.off{background:var(--acc)}#eye svg{width:24px;height:24px}
 </style></head><body>
 <div id="vp"><div id="map"></div></div><div id="rub"></div>
-<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v5</small></div>
+<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v6</small></div>
 <div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp">📍 Lugares</button><button id="bm">✎ Marcar</button><button id="bl">☰ <span id="cnt">0</span></button></div>
 <div id="leg" class="p"><header><span>Lugares · leyenda</span><button class="btn" id="lc" aria-label="Cerrar">✕</button></header><div id="chips"></div><div id="plist"></div></div>
 <div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
@@ -212,7 +212,7 @@ function flagSVG(c) {   // banderín pixel art con 4 fotogramas de ondeo
   return out + '</svg>';
 }
 const PD = window.__P || { cats: [], pois: [] };
-const COL = { 'Pueblos': '#f2b632', 'Monumentos': '#9a6a3c', 'Parajes': '#2a9fd6', 'Cumbres': '#d1495b', 'Ocio': '#3fae6a', 'Comer y dormir': '#ee7d2d', 'Servicios': '#7d8a99' };
+const COL = { 'Pueblos': '#f2b632', 'Monumentos': '#8f4fd8', 'Parajes': '#2a9fd6', 'Cumbres': '#d1495b', 'Ocio': '#3fae6a', 'Comer y dormir': '#ee7d2d', 'Servicios': '#7d8a99' };
 const MINOR = new Set(['Servicios', 'Comer y dormir', 'Ocio', 'Monumentos']);
 const colOf = c => COL[c] || '#888'; const hidden = new Set(); let selP = null; let hideAll = false; try { hideAll = localStorage.getItem('pins-off') === '1'; } catch (e) {}
 PD.pois.forEach((p, i) => { p.i = i; const e = document.createElement('div'); e.className = 'pin'; e.style.setProperty('--c', colOf(p.cat));
