@@ -9,7 +9,7 @@
 :root{--ink:#2a221f;--paper:#f4efe6;--acc:#2f6fe4}
 html,body{margin:0;height:100%;background:#cfdde8;overflow:hidden;font-family:system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none}
 #vp{position:fixed;inset:0;touch-action:none;cursor:grab}
-#map{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+#map{position:absolute;inset:0;overflow:hidden}
 #map img{position:absolute;image-rendering:auto;opacity:0;transition:opacity .25s;}
 #map img.ok{opacity:1}
 #map img{pointer-events:none;-webkit-user-drag:none}
@@ -48,11 +48,11 @@ button{font:inherit}
 <script>
 const M = window.__M, W = M.W, H = M.H;
 const $ = id => document.getElementById(id), vp = $('vp'), map = $('map');
-map.style.width = W + 'px'; map.style.height = H + 'px';
+
 let s = 1, tx = 0, ty = 0;
 const MIN = () => Math.min(innerWidth / W, innerHeight / H) * 0.95, MAX = 8;
 const cache = new Map();                       // clave -> <img>
-const DPR = Math.min(window.devicePixelRatio || 1, 2);
+const DPR = Math.min(window.devicePixelRatio || 1, 1.5);   // en móvil no hace falta más (memoria)
 function lod() {
   const x0 = -tx / s, y0 = -ty / s, x1 = x0 + innerWidth / s, y1 = y0 + innerHeight / s;
   const want = new Set();
@@ -69,7 +69,7 @@ function lod() {
       if (!cache.has(key)) {
         const im = new Image(); im.decoding = 'async'; im.alt = '';
         const tw = Math.min(L.T, Lv.w - cx * L.T) * f / L.s, th = Math.min(L.T, Lv.h - cy * L.T) * f / L.s;
-        Object.assign(im.style, { left: tx0 + 'px', top: ty0 + 'px', width: `calc(${tw}px + var(--o))`, height: `calc(${th}px + var(--o))`, zIndex: li * 10 + (10 - lv) });
+        im._g = [tx0, ty0, tw, th]; im.style.zIndex = li * 10 + (10 - lv); place(im);
         im.onload = () => im.classList.add('ok');
         im.src = `t/${key}.webp`; map.appendChild(im); cache.set(key, im);
       }
@@ -77,11 +77,14 @@ function lod() {
   });
   // quita lo que ya no hace falta, pero solo cuando lo nuevo ha cargado (sin parpadeos)
   clearTimeout(lod.t); lod.t = setTimeout(() => {
-    for (const [k, im] of cache) if (!want.has(k)) { im.remove(); cache.delete(k); }
-  }, 900);
+    for (const [k, im] of cache) if (!want.has(k)) { im.removeAttribute('src'); im.remove(); cache.delete(k); }
+  }, 400);
+  if (cache.size > 160) for (const [k, im] of cache) if (!want.has(k)) { im.removeAttribute('src'); im.remove(); cache.delete(k); }
 }
 let raf = 0;
-function apply() { map.style.setProperty('--o', (1.2 / s) + 'px'); map.classList.toggle('px', s * DPR >= 1.5); map.style.transform = `translate(${tx}px,${ty}px) scale(${s})`; cancelAnimationFrame(raf); raf = requestAnimationFrame(lod); hashSave(); scaleLabels(); }
+function place(im) { const [x, y, w, h] = im._g; const L = Math.floor(tx + x * s), T = Math.floor(ty + y * s);
+  im.style.left = L + 'px'; im.style.top = T + 'px'; im.style.width = (Math.ceil(tx + (x + w) * s) - L + 1) + 'px'; im.style.height = (Math.ceil(ty + (y + h) * s) - T + 1) + 'px'; }
+function apply() { map.classList.toggle('px', s * DPR >= 1.5); for (const im of cache.values()) place(im); cancelAnimationFrame(raf); raf = requestAnimationFrame(lod); hashSave(); scaleLabels(); }
 function fit() { s = MIN(); tx = (innerWidth - W * s) / 2; ty = (innerHeight - H * s) / 2; apply(); }
 function zoom(f, cx, cy) { const n = Math.max(MIN(), Math.min(MAX, s * f)); tx = cx - (cx - tx) * n / s; ty = cy - (cy - ty) * n / s; s = n; apply(); }
 let ht; function hashSave() { clearTimeout(ht); ht = setTimeout(() => { const cx = (innerWidth / 2 - tx) / s, cy = (innerHeight / 2 - ty) / s; try { history.replaceState(null, '', `#p${Math.round(cx)}-${Math.round(cy)}-${Math.round(s * 100)}`); } catch (e) {} }, 400); }
@@ -127,11 +130,11 @@ let pending = null;
 function drawRects() {
   map.querySelectorAll('.rect').forEach(e => e.remove());
   for (const m of marks) { const d = document.createElement('div'); d.className = 'rect';
-    Object.assign(d.style, { left: m.x + 'px', top: m.y + 'px', width: Math.max(m.w, 3) + 'px', height: Math.max(m.h, 3) + 'px', borderWidth: (2 / s) + 'px' });
+    d._m = m;
     d.innerHTML = `<i>${m.n}</i>`; map.appendChild(d); }
   scaleLabels();
 }
-function scaleLabels() { map.querySelectorAll('.rect').forEach(d => { d.style.borderWidth = (2 / s) + 'px'; d.firstChild.style.transform = `scale(${1 / s})`; }); }
+function scaleLabels() { map.querySelectorAll('.rect').forEach(d => { const m = d._m; Object.assign(d.style, { left: (tx + m.x * s) + 'px', top: (ty + m.y * s) + 'px', width: Math.max(m.w * s, 8) + 'px', height: Math.max(m.h * s, 8) + 'px', zIndex: 999 }); }); }
 const text = () => `Marcas del mapa vera web v3 (píxeles de la imagen ${W}×${H}):\n` + marks.map(m => `${m.n}. x ${m.x}–${m.x + m.w}, y ${m.y}–${m.y + m.h}: ${m.note || '(sin nota)'}`).join('\n');
 function render() {
   $('cnt').textContent = marks.length; $('list').innerHTML = marks.length ? '' : '<div style="padding:8px 4px;font-size:13px;opacity:.7">Pulsa «✎ Marcar» y arrastra sobre el mapa para recuadrar una zona.</div>';
