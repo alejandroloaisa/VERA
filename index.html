@@ -70,12 +70,12 @@ button{font:inherit}
 #perr{color:#b3261e;font-size:13px;min-height:16px;margin-top:4px}
 #pcard{left:12px;bottom:calc(84px + env(safe-area-inset-bottom));max-width:calc(100vw - 86px);padding:8px 10px;display:none;align-items:center;gap:8px;font-size:13px;z-index:5}#pcard.on{display:flex}
 @media (max-width:700px){#leg{max-height:calc(100vh - 250px)}}
-#pcard span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#pcard .btn{height:34px;font-size:13px;padding:0 10px}
+#pcard{flex-direction:column;align-items:stretch!important;width:min(380px,calc(100vw - 86px));max-height:45vh;overflow:auto}#pci b{font-size:14px;display:block;margin-bottom:3px}#pci p{margin:0;font-size:13px;line-height:1.45;opacity:.9}#pci p:empty{display:none}.pcb{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}#pcard .btn{height:34px;font-size:13px;padding:0 10px;display:inline-flex;align-items:center;text-decoration:none}
 #leg footer{padding:8px;border-top:1px solid rgba(255,255,255,.1)}#leg footer .btn{width:100%;height:36px;font-size:13px}
 .pi em{font-style:normal;opacity:.6;font-size:11px;margin-left:4px}
 </style></head><body>
 <div id="vp"><div id="map"></div></div><div id="rub"></div>
-<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v11</small></div>
+<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v12</small></div>
 <div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp">📍 Lugares</button><button id="bm">✎ Marcar</button><button id="bl">☰ <span id="cnt">0</span></button></div>
 <div id="leg" class="p"><header><span>Lugares · leyenda</span><button class="btn" id="lc" aria-label="Cerrar">✕</button></header><div id="chips"></div><div id="plist"></div><footer><button class="btn" id="pexp">Copiar mis puntos</button></footer></div>
 <div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
@@ -85,7 +85,7 @@ button{font:inherit}
 <div class="row"><button class="btn" id="dc">Cancelar</button><button class="btn pri" id="dk">Guardar</button></div></div></div>
 <button id="eye" class="p" aria-label="Mostrar u ocultar marcadores"></button>
 <button id="ba" class="p" aria-label="Añadir punto">+</button>
-<div id="pcard" class="p"><span id="pcn"></span><button class="btn" id="pce">Editar</button><button class="btn" id="pcd">Borrar</button></div>
+<div id="pcard" class="p"><div id="pci"><b id="pcn"></b><p id="pcdsc"></p></div><div class="pcb"><a class="btn" id="pcg" target="_blank" rel="noopener">Cómo llegar ↗</a><button class="btn" id="pce">Editar</button><button class="btn" id="pcd">Borrar</button></div></div>
 <div id="pdlg"><div class="box"><div style="font-weight:600" id="ptitle">Nuevo punto</div>
 <label for="pn">Nombre</label><input id="pn" maxlength="60" autocomplete="off" placeholder="Ej.: Mi mirador favorito">
 <label for="pc">Categoría</label><select id="pc"></select>
@@ -94,7 +94,7 @@ button{font:inherit}
 <div id="perr"></div>
 <div class="row"><button class="btn del" id="pdel" style="display:none">Borrar</button><button class="btn" id="pcan">Cancelar</button><button class="btn pri" id="psave">Guardar</button></div></div></div>
 <div id="toast" class="p"></div>
-<script src="mapa.js?v=4"></script><script src="pois.js?v=4"></script>
+<script src="mapa.js?v=4"></script><script src="pois.js?v=5"></script>
 <script>
 const M = window.__M, W = M.W, H = M.H;
 const $ = id => document.getElementById(id), vp = $('vp'), map = $('map');
@@ -249,7 +249,7 @@ function placePins() { const lab = s > 1.5; map.style.setProperty('--k', Math.mi
   for (const p of PD.pois) { p.el.style.left = (tx + p.x * s) + 'px'; p.el.style.top = (ty + p.y * s) + 'px'; p.el.classList.toggle('lab', lab && s > 1.5); p.el.style.display = (hidden.has(p.cat) || (s < 0.3 && MINOR.has(p.cat) && p !== selP) || (hideAll && p !== selP)) ? 'none' : ''; } }
 function selectP(p) { selP = p; showCard(); for (const q of PD.pois) q.el.classList.toggle('sel', q === p);
   document.querySelectorAll('.pi').forEach(e => e.classList.toggle('sel', e._p === p));
-  for (const q of PD.pois) { const b = q.el.querySelector('b'); b.innerHTML = ''; b.append(q.n); if (q === p && q.d) { const m = document.createElement('small'); m.textContent = q.d; b.appendChild(m); } } }
+  for (const q of PD.pois) { const b = q.el.querySelector('b'); b.innerHTML = ''; b.append(q.n);  } }
 let anim = 0;
 function goTo(p, fromList) {
   selectP(p); if (hidden.has(p.cat)) { hidden.delete(p.cat); filt(); }
@@ -260,7 +260,7 @@ function goTo(p, fromList) {
   (function step(t) { const k = Math.min(1, (t - t0) / dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
     s = Math.exp(Math.log(s0) + (Math.log(ts) - Math.log(s0)) * e);
     const wx = w0[0] + (p.y * 0 + p.x - w0[0]) * e, wy = w0[1] + (p.y - 8 - w0[1]) * e;
-    tx = innerWidth / 2 - shift * e - wx * s; ty = innerHeight / 2 - wy * s; apply();
+    const cy_ = innerHeight * (innerWidth < 700 ? 0.5 - 0.17 * e : 0.5); tx = innerWidth / 2 - shift * e - wx * s; ty = cy_ - wy * s; apply();
     if (k < 1) anim = requestAnimationFrame(step); })(t0);
 }
 function filt() { document.querySelectorAll('.chip').forEach(c => c.classList.toggle('off', hidden.has(c._c))); for (const p of PD.pois) p.el.classList.toggle('off', hidden.has(p.cat)); placePins();
@@ -302,9 +302,11 @@ $('psave').onclick = () => {
   closeDlg(); persist(); rebuildLeg(); selectP(p); placePins(); toast('Punto guardado'); };
 $('pdel').onclick = () => delP(editing);
 function delP(p) { if (!p) return; p.el.remove(); PD.pois.splice(PD.pois.indexOf(p), 1); if (selP === p) selP = null; closeDlg(); persist(); rebuildLeg(); selectP(null); toast('Punto borrado'); }
-function showCard() { const on = selP && selP.mine; $('pcard').classList.toggle('on', !!on); if (on) $('pcn').textContent = selP.n; }
+function showCard() { const p = selP; $('pcard').classList.toggle('on', !!p); if (!p) return;
+  $('pcn').textContent = p.n; $('pcdsc').textContent = p.d || ''; ['pce', 'pcd'].forEach(i => $(i).style.display = p.mine ? '' : 'none');
+  const ll = p.ll; $('pcg').style.display = ll ? '' : 'none'; if (ll) $('pcg').href = `https://www.google.com/maps/dir/?api=1&destination=${ll[0]},${ll[1]}`; }
 $('pce').onclick = () => selP && openDlg(selP); $('pcd').onclick = () => { if (selP && confirm('¿Borrar «' + selP.n + '»?')) delP(selP); };
-['pce', 'pcd'].forEach(i => $(i).addEventListener('pointerdown', e => e.stopPropagation()));
+['pce', 'pcd', 'pcg', 'pcard'].forEach(i => $(i).addEventListener('pointerdown', e => e.stopPropagation()));
 $('pexp').onclick = async () => { const L = PD.pois.filter(p => p.mine); if (!L.length) { toast('Aún no has creado puntos'); return; }
   const t = `Puntos nuevos del mapa vera (píxeles de la imagen ${W}×${H}):\n` + L.map(p => `- [${p.cat}] ${p.n} · x ${p.x}, y ${p.y}${p.d ? ' · ' + p.d : ''}`).join('\n');
   try { await navigator.clipboard.writeText(t); toast('Copiado. Pégalo en el chat con Claude.'); } catch (e) { prompt('Copia este texto:', t); } };
