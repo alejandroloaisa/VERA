@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Jarandilla y Guijo · La Vera en pixel art</title>
+<meta name="author" content="Alejandro Loaisa · LOAISA STUDIO">
+<meta property="og:title" content="Jarandilla y Guijo · La Vera en pixel art">
+<meta property="og:description" content="Mapa isométrico en pixel art de Jarandilla de la Vera, Guijo de Santa Bárbara y la sierra, hecho con datos reales.">
+<style>
+:root{--ink:#2a221f;--paper:#f4efe6;--acc:#2f6fe4}
+html,body{margin:0;height:100%;background:#cfdde8;overflow:hidden;font-family:system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none}
+#vp{position:fixed;inset:0;touch-action:none;cursor:grab}
+#map{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+#map img{position:absolute;image-rendering:auto;opacity:0;transition:opacity .25s;}
+#map img.ok{opacity:1}
+#map img{pointer-events:none;-webkit-user-drag:none}
+.p{position:fixed;background:rgba(42,34,31,.88);color:var(--paper);border-radius:12px}
+#t{left:12px;top:calc(12px + env(safe-area-inset-top));padding:8px 12px;font-size:14px}#t small{display:block;opacity:.7;font-size:11px}
+#h{left:12px;bottom:calc(12px + env(safe-area-inset-bottom));padding:6px;display:flex;gap:6px}
+button{font:inherit}
+#h button,.btn{border:0;border-radius:9px;background:rgba(255,255,255,.14);color:var(--paper);font-size:15px;height:40px;min-width:40px;padding:0 10px;cursor:pointer}
+#h button.on{background:var(--acc)}
+#marks{right:12px;top:calc(12px + env(safe-area-inset-top));width:min(300px,calc(100vw - 24px));max-height:calc(100vh - 100px);display:none;flex-direction:column}
+#marks.open{display:flex}#marks header{padding:10px 12px 6px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+#list{overflow:auto;padding:0 8px}.mk{display:flex;gap:8px;align-items:flex-start;padding:7px 4px;border-top:1px solid rgba(255,255,255,.1);font-size:13px}
+.mk b{background:var(--acc);border-radius:6px;padding:1px 6px;font-size:12px}.mk span{flex:1;cursor:pointer}.mk button{background:none;border:0;color:#f0a49a;font-size:16px}
+#marks footer{padding:8px;display:flex;flex-direction:column;gap:6px}
+#out{width:100%;box-sizing:border-box;height:90px;font-size:11px;border-radius:8px;border:0;padding:6px;display:none;-webkit-user-select:text;user-select:text}
+.rect{position:absolute;border:2px solid var(--acc);background:rgba(47,111,228,.15);box-sizing:border-box;pointer-events:none}
+.rect i{position:absolute;left:-2px;bottom:100%;background:var(--acc);color:#fff;font:600 12px system-ui;font-style:normal;padding:1px 5px;border-radius:5px 5px 5px 0;transform-origin:0 100%}
+#rub{position:fixed;border:2px dashed var(--acc);background:rgba(47,111,228,.12);display:none;pointer-events:none}
+#dlg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;place-items:center}#dlg.on{display:grid}
+#dlg .box{background:var(--paper);color:var(--ink);border-radius:14px;padding:14px;width:min(360px,90vw)}
+#note{width:100%;box-sizing:border-box;height:90px;margin:8px 0;border-radius:8px;border:1px solid #c9bfb2;padding:8px;font:16px system-ui;-webkit-user-select:text;user-select:text}
+#dlg .row{display:flex;gap:8px;justify-content:flex-end}#dlg .btn{background:#e3dacd;color:var(--ink)}#dlg .btn.pri{background:var(--acc);color:#fff}
+#toast{left:50%;bottom:80px;transform:translateX(-50%);padding:8px 14px;font-size:13px;display:none}
+#map.px img{image-rendering:pixelated;image-rendering:crisp-edges}
+</style></head><body>
+<div id="vp"><div id="map"></div></div><div id="rub"></div>
+<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO</small></div>
+<div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bm">✎ Marcar</button><button id="bl">☰ <span id="cnt">0</span></button></div>
+<div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
+<footer><button class="btn" id="copy">Copiar marcas</button><textarea id="out" readonly></textarea><button class="btn" id="clr">Borrar todas</button></footer></div>
+<div id="dlg"><div class="box"><div style="font-weight:600">Marca <span id="dn"></span>: ¿qué hay que cambiar?</div>
+<textarea id="note" placeholder="Ej.: este edificio es más bajo, tejado a cuatro aguas…"></textarea>
+<div class="row"><button class="btn" id="dc">Cancelar</button><button class="btn pri" id="dk">Guardar</button></div></div></div>
+<div id="toast" class="p"></div>
+<script src="mapa.js"></script>
+<script>
+const M = window.__M, W = M.W, H = M.H;
+const $ = id => document.getElementById(id), vp = $('vp'), map = $('map');
+map.style.width = W + 'px'; map.style.height = H + 'px';
+let s = 1, tx = 0, ty = 0;
+const MIN = () => Math.min(innerWidth / W, innerHeight / H) * 0.95, MAX = 8;
+const cache = new Map();                       // clave -> <img>
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+function lod() {
+  const x0 = -tx / s, y0 = -ty / s, x1 = x0 + innerWidth / s, y1 = y0 + innerHeight / s;
+  const want = new Set();
+  M.layers.forEach((L, li) => {
+    if (s < L.minz) return;
+    // nivel: el más pequeño cuya resolución sigue siendo >= la de pantalla
+    const ppx = s * DPR / L.s;                 // píxeles de pantalla por píxel de la capa (nivel 0)
+    let lv = Math.floor(Math.log2(1 / Math.max(ppx, 1e-6))); lv = Math.max(0, Math.min(L.levels.length - 1, lv));
+    const Lv = L.levels[lv], f = 2 ** lv, ts = L.T * f / L.s;   // tamaño de tesela en píxeles de la base
+    for (const [cx, cy] of Lv.tiles) {
+      const tx0 = L.x + cx * ts, ty0 = L.y + cy * ts;
+      if (tx0 > x1 || ty0 > y1 || tx0 + ts < x0 || ty0 + ts < y0) continue;
+      const key = `${L.name}/${lv}/${cx}_${cy}`; want.add(key);
+      if (!cache.has(key)) {
+        const im = new Image(); im.decoding = 'async'; im.alt = '';
+        const tw = Math.min(L.T, Lv.w - cx * L.T) * f / L.s, th = Math.min(L.T, Lv.h - cy * L.T) * f / L.s;
+        Object.assign(im.style, { left: tx0 + 'px', top: ty0 + 'px', width: `calc(${tw}px + var(--o))`, height: `calc(${th}px + var(--o))`, zIndex: li * 10 + (10 - lv) });
+        im.onload = () => im.classList.add('ok');
+        im.src = `t/${key}.webp`; map.appendChild(im); cache.set(key, im);
+      }
+    }
+  });
+  // quita lo que ya no hace falta, pero solo cuando lo nuevo ha cargado (sin parpadeos)
+  clearTimeout(lod.t); lod.t = setTimeout(() => {
+    for (const [k, im] of cache) if (!want.has(k)) { im.remove(); cache.delete(k); }
+  }, 900);
+}
+let raf = 0;
+function apply() { map.style.setProperty('--o', (1.2 / s) + 'px'); map.classList.toggle('px', s * DPR >= 1.5); map.style.transform = `translate(${tx}px,${ty}px) scale(${s})`; cancelAnimationFrame(raf); raf = requestAnimationFrame(lod); hashSave(); scaleLabels(); }
+function fit() { s = MIN(); tx = (innerWidth - W * s) / 2; ty = (innerHeight - H * s) / 2; apply(); }
+function zoom(f, cx, cy) { const n = Math.max(MIN(), Math.min(MAX, s * f)); tx = cx - (cx - tx) * n / s; ty = cy - (cy - ty) * n / s; s = n; apply(); }
+let ht; function hashSave() { clearTimeout(ht); ht = setTimeout(() => { const cx = (innerWidth / 2 - tx) / s, cy = (innerHeight / 2 - ty) / s; try { history.replaceState(null, '', `#p${Math.round(cx)}-${Math.round(cy)}-${Math.round(s * 100)}`); } catch (e) {} }, 400); }
+function hashLoad() { const m = location.hash.match(/^#p(\d+)-(\d+)-(\d+)$/); if (!m) return false; s = +m[3] / 100; tx = innerWidth / 2 - m[1] * s; ty = innerHeight / 2 - m[2] * s; apply(); return true; }
+const toast = t => { const e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = 'none', 2000); };
+
+// gestos: arrastrar, pellizcar, rueda, doble toque
+let mode = false, start = null; const P = new Map(); let ld = 0, lastTap = 0;
+vp.addEventListener('wheel', e => { e.preventDefault(); zoom(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY); }, { passive: false });
+vp.addEventListener('pointerdown', e => {
+  vp.setPointerCapture(e.pointerId);
+  if (mode) { start = [e.clientX, e.clientY]; return; }
+  P.set(e.pointerId, [e.clientX, e.clientY]);
+  const now = Date.now(); if (P.size === 1 && now - lastTap < 300) zoom(2, e.clientX, e.clientY); lastTap = now;
+});
+vp.addEventListener('pointermove', e => {
+  if (mode) { if (!start) return; const r = $('rub'); r.style.display = 'block';
+    Object.assign(r.style, { left: Math.min(start[0], e.clientX) + 'px', top: Math.min(start[1], e.clientY) + 'px', width: Math.abs(e.clientX - start[0]) + 'px', height: Math.abs(e.clientY - start[1]) + 'px' }); return; }
+  if (!P.has(e.pointerId)) return; const p = P.get(e.pointerId); P.set(e.pointerId, [e.clientX, e.clientY]);
+  if (P.size === 1) { tx += e.clientX - p[0]; ty += e.clientY - p[1]; apply(); }
+  else if (P.size === 2) { const [a, b] = [...P.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (ld) zoom(d / ld, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); ld = d; }
+});
+const up = e => {
+  if (mode && start) { $('rub').style.display = 'none'; finishRect(start, [e.clientX, e.clientY]); start = null; return; }
+  P.delete(e.pointerId); ld = 0;
+};
+vp.addEventListener('pointerup', up); vp.addEventListener('pointercancel', e => { start = null; $('rub').style.display = 'none'; P.delete(e.pointerId); ld = 0; });
+$('zi').onclick = () => zoom(1.6, innerWidth / 2, innerHeight / 2); $('zo').onclick = () => zoom(1 / 1.6, innerWidth / 2, innerHeight / 2); $('zf').onclick = fit;
+addEventListener('resize', () => { if (s < MIN()) fit(); else apply(); });
+
+// marcas (en píxeles de la imagen base)
+const KEY = 'marcas-vera'; let marks = []; try { marks = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(marks)); } catch (e) {} render(); };
+const toMap = (x, y) => [(x - tx) / s, (y - ty) / s];
+function finishRect(a, b) {
+  const [ax, ay] = toMap(...a), [bx, by] = toMap(...b);
+  let x = Math.round(Math.min(ax, bx)), y = Math.round(Math.min(ay, by)), w = Math.round(Math.abs(ax - bx)), h = Math.round(Math.abs(ay - by));
+  if (w < 3 && h < 3) { x -= 3; y -= 3; w = h = 6; }
+  pending = { n: marks.reduce((m, k) => Math.max(m, k.n), 0) + 1, x, y, w, h, note: '' };
+  $('dn').textContent = pending.n; $('note').value = ''; $('dlg').classList.add('on'); setTimeout(() => $('note').focus(), 50);
+}
+let pending = null;
+function drawRects() {
+  map.querySelectorAll('.rect').forEach(e => e.remove());
+  for (const m of marks) { const d = document.createElement('div'); d.className = 'rect';
+    Object.assign(d.style, { left: m.x + 'px', top: m.y + 'px', width: Math.max(m.w, 3) + 'px', height: Math.max(m.h, 3) + 'px', borderWidth: (2 / s) + 'px' });
+    d.innerHTML = `<i>${m.n}</i>`; map.appendChild(d); }
+  scaleLabels();
+}
+function scaleLabels() { map.querySelectorAll('.rect').forEach(d => { d.style.borderWidth = (2 / s) + 'px'; d.firstChild.style.transform = `scale(${1 / s})`; }); }
+const text = () => `Marcas del mapa vera web v3 (píxeles de la imagen ${W}×${H}):\n` + marks.map(m => `${m.n}. x ${m.x}–${m.x + m.w}, y ${m.y}–${m.y + m.h}: ${m.note || '(sin nota)'}`).join('\n');
+function render() {
+  $('cnt').textContent = marks.length; $('list').innerHTML = marks.length ? '' : '<div style="padding:8px 4px;font-size:13px;opacity:.7">Pulsa «✎ Marcar» y arrastra sobre el mapa para recuadrar una zona.</div>';
+  for (const m of marks) { const d = document.createElement('div'); d.className = 'mk'; d.innerHTML = '<b></b><span></span><button aria-label="Borrar">✕</button>';
+    d.querySelector('b').textContent = m.n; d.querySelector('span').textContent = m.note || '(sin nota)';
+    d.querySelector('span').onclick = () => { s = Math.min(MAX, Math.max(MIN(), Math.min(innerWidth, innerHeight) * 0.4 / Math.max(m.w, m.h, 20))); tx = innerWidth / 2 - (m.x + m.w / 2) * s; ty = innerHeight / 2 - (m.y + m.h / 2) * s; apply(); };
+    d.querySelector('button').onclick = () => { marks = marks.filter(k => k !== m); save(); drawRects(); };
+    $('list').appendChild(d); }
+  $('out').value = text();
+}
+$('bm').onclick = () => { mode = !mode; $('bm').classList.toggle('on', mode); vp.style.cursor = mode ? 'crosshair' : 'grab'; if (mode) toast('Arrastra para recuadrar una zona'); };
+$('bl').onclick = () => $('marks').classList.toggle('open'); $('mc').onclick = () => $('marks').classList.remove('open');
+$('copy').onclick = async () => { $('out').style.display = 'block'; try { await navigator.clipboard.writeText(text()); toast('Copiado. Pégalo en el chat con Claude.'); } catch (e) { $('out').focus(); $('out').select(); toast('Mantén pulsado el texto para copiarlo.'); } };
+$('clr').onclick = () => { marks = []; save(); drawRects(); };
+$('dc').onclick = () => { pending = null; $('dlg').classList.remove('on'); };
+$('dk').onclick = () => { pending.note = $('note').value.trim(); marks.push(pending); pending = null; save(); drawRects();
+  $('dlg').classList.remove('on'); mode = false; $('bm').classList.remove('on'); vp.style.cursor = 'grab'; $('marks').classList.add('open'); };
+if (!hashLoad()) fit(); render(); drawRects();
+</script></body></html>
