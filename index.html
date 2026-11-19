@@ -50,7 +50,7 @@ button{font:inherit}
 .pin.sel b{left:32px;top:-58px;font-size:13px}
 .pin.off{display:none}
 #leg{right:12px;top:calc(12px + env(safe-area-inset-top));width:min(310px,calc(100vw - 24px));max-height:calc(100vh - 100px);display:none;flex-direction:column}
-#leg.open{display:flex}#leg header{padding:10px 12px 6px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+#leg.open{display:flex}#leg.min #chips,#leg.min #plist,#leg.min footer,#leg.min header>span{display:none!important}#leg.min{width:auto;max-height:none}#leg.min header{padding:4px;gap:8px}#leg header{padding:10px 12px 6px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
 #chips{display:flex;flex-wrap:wrap;gap:5px;padding:0 10px 8px}
 .chip{border:0;border-radius:14px;padding:4px 10px 4px 8px;font-size:12px;height:auto!important;min-width:0!important;background:rgba(255,255,255,.14);color:var(--paper);cursor:pointer;display:flex;align-items:center;gap:5px}
 .chip u{width:9px;height:9px;border-radius:50%;background:var(--c);display:block}.chip.off{opacity:.4;text-decoration:line-through}
@@ -94,9 +94,9 @@ button{font:inherit}
 .pin.lg b{left:22px;top:-56px}
 </style></head><body>
 <div id="vp"><div id="map"></div></div><div id="rub"></div>
-<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v36</small></div>
+<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v37</small></div>
 <div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp" aria-label="Lugares">📍<span class="tx"> Lugares</span></button><button id="br" aria-label="Rutas">🥾<span class="tx"> Rutas</span></button><button id="bc" aria-label="Carreteras">🛣<span class="tx"> Carreteras</span></button><button id="bt" aria-label="Parajes (nombres)">🏷<span class="tx"> Parajes</span></button><button id="bm" aria-label="Marcar">✎<span class="tx"> Marcar</span></button><button id="bl">☰ <span id="cnt">0</span></button></div>
-<div id="leg" class="p"><header><span>Lugares · leyenda</span><button class="btn" id="lc" aria-label="Cerrar">✕</button></header><div id="chips"></div><div id="plist"></div><footer><button class="btn" id="pexp">Copiar mis puntos</button></footer></div>
+<div id="leg" class="p"><header><span>Lugares · leyenda</span><button class="btn" id="lc" aria-label="Ocultar leyenda">▲</button></header><div id="chips"></div><div id="plist"></div><footer><button class="btn" id="pexp">Copiar mis puntos</button></footer></div>
 <canvas id="cr"></canvas><canvas id="rt"></canvas><canvas id="lb"></canvas><div id="rpan" class="p"><header><span>Rutas y senderos</span><span><button class="btn" id="rm" aria-label="Ocultar lista">▲</button> <button class="btn" id="rc" aria-label="Cerrar">✕</button></span></header><div id="rlist"></div><small style="opacity:.7;display:block;padding:6px 4px 0;font-size:11px">Wikiloc (autores citados) y OpenStreetMap · tiempos orientativos · toca: ver/ocultar · ⓘ: ficha</small></div><div id="rcard" class="p"></div><div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
 <footer><button class="btn" id="copy">Copiar marcas</button><textarea id="out" readonly></textarea><button class="btn" id="clr">Borrar todas</button></footer></div>
 <div id="dlg"><div class="box"><div style="font-weight:600">Marca <span id="dn"></span>: ¿qué hay que cambiar?</div>
@@ -339,9 +339,9 @@ function setEye() { $('eye').innerHTML = hideAll ? EYE0 : EYE; $('eye').classLis
 $('eye').onclick = () => { hideAll = !hideAll; try { localStorage.setItem('pins-off', hideAll ? '1' : '0'); } catch (e) {} setEye(); toast(hideAll ? 'Marcadores ocultos' : 'Marcadores visibles'); };
 $('eye').addEventListener('pointerdown', e => e.stopPropagation()); setEye();
 function setP(v) { hideAll = !v; try { localStorage.setItem('pins-off', v ? '0' : '1'); } catch (e) {} $('bp').classList.toggle('on', v); if (!v) $('leg').classList.remove('open'); placePins(); }
-$('bp').onclick = () => { const v = hideAll; setP(v); if (v) { $('marks').classList.remove('open'); $('leg').classList.add('open'); } toast(v ? 'Lugares visibles' : 'Lugares ocultos'); };
+$('bp').onclick = () => { const v = hideAll; setP(v); if (v) { $('marks').classList.remove('open'); $('leg').classList.add('open'); $('leg').classList.remove('min'); $('lc').textContent = '▲'; } toast(v ? 'Lugares visibles' : 'Lugares ocultos'); };
 $('bp').classList.toggle('on', !hideAll);
-$('lc').onclick = () => $('leg').classList.remove('open');
+$('lc').onclick = () => { const m = $('leg').classList.toggle('min'); $('lc').textContent = m ? '📍 ▼' : '▲'; $('lc').setAttribute('aria-label', m ? 'Mostrar leyenda' : 'Ocultar leyenda'); };
 vp.addEventListener('pointerdown', e => { dn = [e.clientX, e.clientY]; });
 vp.addEventListener('click', e => { const d = dn ? Math.hypot(e.clientX - dn[0], e.clientY - dn[1]) : 99; if (d > 8) return;
   if (addMode) { const [x, y] = toMap(e.clientX, e.clientY); setAdd(false); openDlg(null, Math.round(x), Math.round(y)); return; }
