@@ -87,7 +87,7 @@ button{font:inherit}
 .ri.off{opacity:.45}.ri b{display:block;font-size:13.5px}.ri small{opacity:.8}
 </style></head><body>
 <div id="vp"><div id="map"></div></div><div id="rub"></div>
-<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v24</small></div>
+<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v25</small></div>
 <div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp" aria-label="Lugares">📍<span class="tx"> Lugares</span></button><button id="br" aria-label="Rutas">🥾<span class="tx"> Rutas</span></button><button id="bt" aria-label="Parajes (nombres)">🏷<span class="tx"> Parajes</span></button><button id="bm" aria-label="Marcar">✎<span class="tx"> Marcar</span></button><button id="bl">☰ <span id="cnt">0</span></button></div>
 <div id="leg" class="p"><header><span>Lugares · leyenda</span><button class="btn" id="lc" aria-label="Cerrar">✕</button></header><div id="chips"></div><div id="plist"></div><footer><button class="btn" id="pexp">Copiar mis puntos</button></footer></div>
 <canvas id="rt"></canvas><canvas id="lb"></canvas><div id="rpan" class="p"><header><span>Rutas y senderos</span><span><button class="btn" id="rm" aria-label="Ocultar lista">▲</button> <button class="btn" id="rc" aria-label="Cerrar">✕</button></span></header><div id="rlist"></div><small style="opacity:.7;display:block;padding:6px 4px 0;font-size:11px">Wikiloc (autores citados) y OpenStreetMap · tiempos orientativos · toca: ver/ocultar · ⓘ: ficha</small></div><div id="rcard" class="p"></div><div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
@@ -345,7 +345,7 @@ function drawRoutes() { const dpr = devicePixelRatio || 1, w = innerWidth, h = i
         const X = tx + p[0] * s, Y = ty + p[1] * s; on ? rx.lineTo(X, Y) : rx.moveTo(X, Y); on = true; }
       if (pass === 1) { rx.setLineDash([lw, lw * 1.8]); rx.strokeStyle = r.c; rx.globalAlpha = .45; rx.lineWidth = lw; rx.stroke(); }
       else { rx.setLineDash([]); rx.strokeStyle = 'rgba(20,14,6,.55)'; rx.globalAlpha = 1; rx.lineWidth = lw + 1.8; rx.stroke();
-             rx.setLineDash([lw * 2.6, lw * 1.5]); rx.strokeStyle = r.c; rx.lineWidth = lw; rx.stroke(); } }
+             rx.strokeStyle = r.c; rx.lineWidth = lw; rx.stroke(); } }
     rx.globalAlpha = 1; rx.setLineDash([]);
     const a = r.segs[0].pts.find(p => p[2] === 1); if (a) { rx.beginPath(); rx.arc(tx + a[0] * s, ty + a[1] * s, lw + 1.2, 0, 7); rx.fillStyle = 'rgba(20,14,6,.7)'; rx.fill(); rx.beginPath(); rx.arc(tx + a[0] * s, ty + a[1] * s, lw * .55 + .6, 0, 7); rx.fillStyle = r.c; rx.fill(); } } }
 const _sl = scaleLabels; scaleLabels = function () { _sl(); drawRoutes(); };
