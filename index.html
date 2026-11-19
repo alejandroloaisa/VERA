@@ -7,7 +7,7 @@
 <meta property="og:description" content="Mapa isométrico en pixel art de Jarandilla de la Vera, Guijo de Santa Bárbara y la sierra, hecho con datos reales.">
 <style>
 :root{--ink:#2a221f;--paper:#f4efe6;--acc:#2f6fe4}
-html,body{margin:0;height:100%;background:#cfdde8;overflow:hidden;font-family:system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none}
+*{touch-action:manipulation;-webkit-tap-highlight-color:transparent}html,body{margin:0;height:100%;background:#cfdde8;overflow:hidden;font-family:system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none}
 #vp{position:fixed;inset:0;touch-action:none;cursor:grab}
 #map{position:absolute;inset:0;overflow:hidden}
 #map img{position:absolute;image-rendering:auto;opacity:0;transition:opacity .25s;}
@@ -94,7 +94,7 @@ button{font:inherit}
 .pin.lg b{left:22px;top:-56px}
 </style></head><body>
 <div id="vp"><div id="map"></div></div><div id="rub"></div>
-<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v37</small></div>
+<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v38</small></div>
 <div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp" aria-label="Lugares">📍<span class="tx"> Lugares</span></button><button id="br" aria-label="Rutas">🥾<span class="tx"> Rutas</span></button><button id="bc" aria-label="Carreteras">🛣<span class="tx"> Carreteras</span></button><button id="bt" aria-label="Parajes (nombres)">🏷<span class="tx"> Parajes</span></button><button id="bm" aria-label="Marcar">✎<span class="tx"> Marcar</span></button><button id="bl">☰ <span id="cnt">0</span></button></div>
 <div id="leg" class="p"><header><span>Lugares · leyenda</span><button class="btn" id="lc" aria-label="Ocultar leyenda">▲</button></header><div id="chips"></div><div id="plist"></div><footer><button class="btn" id="pexp">Copiar mis puntos</button></footer></div>
 <canvas id="cr"></canvas><canvas id="rt"></canvas><canvas id="lb"></canvas><div id="rpan" class="p"><header><span>Rutas y senderos</span><span><button class="btn" id="rm" aria-label="Ocultar lista">▲</button> <button class="btn" id="rc" aria-label="Cerrar">✕</button></span></header><div id="rlist"></div><small style="opacity:.7;display:block;padding:6px 4px 0;font-size:11px">Wikiloc (autores citados) y OpenStreetMap · tiempos orientativos · toca: ver/ocultar · ⓘ: ficha</small></div><div id="rcard" class="p"></div><div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
@@ -182,6 +182,8 @@ let ht; function hashSave() { clearTimeout(ht); ht = setTimeout(() => { const cx
 function hashLoad() { const m = location.hash.match(/^#p(\d+)-(\d+)-(\d+)$/); if (!m) return false; s = +m[3] / 100; tx = innerWidth / 2 - m[1] * s; ty = innerHeight / 2 - m[2] * s; apply(); return true; }
 const toast = t => { const e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = 'none', 2000); };
 
+['gesturestart','gesturechange','gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+let lt = 0; document.addEventListener('touchend', e => { const n = Date.now(); if (n - lt < 350 && !e.target.closest('input,textarea')) e.preventDefault(); lt = n; }, { passive: false });
 // gestos: arrastrar, pellizcar, rueda, doble toque
 let mode = false, start = null; const P = new Map(); let ld = 0, lastTap = 0;
 vp.addEventListener('wheel', e => { e.preventDefault(); zoom(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY); }, { passive: false });
