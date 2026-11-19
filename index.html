@@ -75,6 +75,7 @@ button{font:inherit}
 .pi em{font-style:normal;opacity:.6;font-size:11px;margin-left:4px}
 #lb{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:901}
 #h{max-width:calc(100vw - 24px);overflow-x:auto}@media(max-width:520px){#h .tx{display:none}#h{gap:6px;padding:5px}#h button{padding:0 7px;font-size:13px;min-width:36px;white-space:nowrap}}
+#cr{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:899}
 #rt{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:900}
 #rpan{display:none;right:12px;top:78px;max-height:38vh;width:min(290px,calc(100vw - 24px));max-height:46vh;overflow:auto;padding:8px;z-index:6}#rpan.open{display:block}
 #rpan.min #rlist,#rpan.min>small{display:none!important}#rpan.min{width:auto}#rpan.min header{padding:0;gap:8px}#rpan.min header>span:first-child{display:none}
@@ -87,10 +88,10 @@ button{font:inherit}
 .ri.off{opacity:.45}.ri b{display:block;font-size:13.5px}.ri small{opacity:.8}
 </style></head><body>
 <div id="vp"><div id="map"></div></div><div id="rub"></div>
-<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v28</small></div>
-<div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp" aria-label="Lugares">📍<span class="tx"> Lugares</span></button><button id="br" aria-label="Rutas">🥾<span class="tx"> Rutas</span></button><button id="bt" aria-label="Parajes (nombres)">🏷<span class="tx"> Parajes</span></button><button id="bm" aria-label="Marcar">✎<span class="tx"> Marcar</span></button><button id="bl">☰ <span id="cnt">0</span></button></div>
+<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v29</small></div>
+<div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp" aria-label="Lugares">📍<span class="tx"> Lugares</span></button><button id="br" aria-label="Rutas">🥾<span class="tx"> Rutas</span></button><button id="bc" aria-label="Carreteras">🛣<span class="tx"> Carreteras</span></button><button id="bt" aria-label="Parajes (nombres)">🏷<span class="tx"> Parajes</span></button><button id="bm" aria-label="Marcar">✎<span class="tx"> Marcar</span></button><button id="bl">☰ <span id="cnt">0</span></button></div>
 <div id="leg" class="p"><header><span>Lugares · leyenda</span><button class="btn" id="lc" aria-label="Cerrar">✕</button></header><div id="chips"></div><div id="plist"></div><footer><button class="btn" id="pexp">Copiar mis puntos</button></footer></div>
-<canvas id="rt"></canvas><canvas id="lb"></canvas><div id="rpan" class="p"><header><span>Rutas y senderos</span><span><button class="btn" id="rm" aria-label="Ocultar lista">▲</button> <button class="btn" id="rc" aria-label="Cerrar">✕</button></span></header><div id="rlist"></div><small style="opacity:.7;display:block;padding:6px 4px 0;font-size:11px">Wikiloc (autores citados) y OpenStreetMap · tiempos orientativos · toca: ver/ocultar · ⓘ: ficha</small></div><div id="rcard" class="p"></div><div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
+<canvas id="cr"></canvas><canvas id="rt"></canvas><canvas id="lb"></canvas><div id="rpan" class="p"><header><span>Rutas y senderos</span><span><button class="btn" id="rm" aria-label="Ocultar lista">▲</button> <button class="btn" id="rc" aria-label="Cerrar">✕</button></span></header><div id="rlist"></div><small style="opacity:.7;display:block;padding:6px 4px 0;font-size:11px">Wikiloc (autores citados) y OpenStreetMap · tiempos orientativos · toca: ver/ocultar · ⓘ: ficha</small></div><div id="rcard" class="p"></div><div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
 <footer><button class="btn" id="copy">Copiar marcas</button><textarea id="out" readonly></textarea><button class="btn" id="clr">Borrar todas</button></footer></div>
 <div id="dlg"><div class="box"><div style="font-weight:600">Marca <span id="dn"></span>: ¿qué hay que cambiar?</div>
 <textarea id="note" placeholder="Ej.: este edificio es más bajo, tejado a cuatro aguas…"></textarea>
@@ -106,7 +107,7 @@ button{font:inherit}
 <div id="perr"></div>
 <div class="row"><button class="btn del" id="pdel" style="display:none">Borrar</button><button class="btn" id="pcan">Cancelar</button><button class="btn pri" id="psave">Guardar</button></div></div></div>
 <div id="toast" class="p"></div>
-<script src="mapa.js?v=5"></script><script src="pois.js?v=8"></script><script src="rutas.js?v=6"></script><script src="parajes.js?v=3"></script>
+<script src="mapa.js?v=5"></script><script src="pois.js?v=8"></script><script src="rutas.js?v=6"></script><script src="carreteras.js?v=4"></script><script src="parajes.js?v=3"></script>
 <script>
 const M = window.__M, W = M.W, H = M.H;
 const $ = id => document.getElementById(id), vp = $('vp'), map = $('map');
@@ -383,5 +384,29 @@ function setL(v) { lOn = v; $('bt').classList.toggle('on', v); try { localStorag
 $('bt').onclick = () => { setL(!lOn); toast(lOn ? 'Parajes visibles · acerca para ver más' : 'Parajes ocultos'); }; $('bt').classList.toggle('on', lOn);
 addEventListener('resize', drawLabels);
 
-if (!hashLoad()) fit(); render(); drawRects(); placePins(); drawRoutes(); drawLabels();
+
+const CR = window.__C || [], cc = $('cr'), cx_ = cc.getContext('2d'); let cOn = false;
+try { cOn = localStorage.getItem('carreteras-on') === '1'; } catch (e) {}
+function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+function drawRoads() { const dpr = devicePixelRatio || 1, w = innerWidth, h = innerHeight;
+  if (cc.width !== w * dpr || cc.height !== h * dpr) { cc.width = w * dpr; cc.height = h * dpr; }
+  const c = cx_; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h); if (!cOn) return;
+  c.lineJoin = 'round'; c.lineCap = 'round'; const lw = Math.max(2.2, Math.min(4.5, 1.6 + s * 1.6));
+  for (const pass of [0, 1]) for (const r of CR) for (const g of r.segs) { c.beginPath(); let on = false;
+      for (const p of g) { if (p[2] !== 1) { on = false; continue; } const X = tx + p[0] * s, Y = ty + p[1] * s; on ? c.lineTo(X, Y) : c.moveTo(X, Y); on = true; }
+      if (pass === 0) { c.strokeStyle = 'rgba(40,30,20,.75)'; c.lineWidth = lw + 2.6; } else { c.strokeStyle = r.c; c.lineWidth = lw; } c.stroke(); }
+  c.font = '600 12.5px system-ui,-apple-system,sans-serif'; c.textBaseline = 'middle';
+  for (const r of CR) { const [ex, ey, an] = r.end, X = tx + ex * s, Y = ty + ey * s, ux = Math.cos(an), uy = Math.sin(an);
+    const rw = c.measureText(r.ref).width + 10, tw = c.measureText(r.n).width + 12, W = rw + tw + 26, H = 24;
+    let bx = X - W / 2 - ux * (W / 2 + 6), by = Y - H / 2 - uy * (H / 2 + 6);
+    bx = Math.max(6, Math.min(w - W - 6, bx)); by = Math.max(84, Math.min(h - H - 96, by));
+    c.fillStyle = 'rgba(38,32,28,.9)'; rr(c, bx, by, W, H, 7); c.fill();
+    c.fillStyle = r.c; rr(c, bx + 4, by + 4, rw, H - 8, 4); c.fill(); c.fillStyle = '#222'; c.textAlign = 'center'; c.fillText(r.ref, bx + 4 + rw / 2, by + H / 2 + .5);
+    c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(r.n, bx + rw + 10, by + H / 2 + .5);
+    const ax = bx + W - 12, ay = by + H / 2; c.save(); c.translate(ax, ay); c.rotate(an); c.beginPath(); c.moveTo(-6, 0); c.lineTo(5, 0); c.moveTo(1, -4); c.lineTo(5.5, 0); c.lineTo(1, 4); c.strokeStyle = '#fff'; c.lineWidth = 2; c.lineCap = 'round'; c.lineJoin = 'round'; c.stroke(); c.restore(); } }
+const _sl3 = scaleLabels; scaleLabels = function () { _sl3(); drawRoads(); };
+function setC(v) { cOn = v; $('bc').classList.toggle('on', v); try { localStorage.setItem('carreteras-on', v ? '1' : '0'); } catch (e) {} drawRoads(); }
+$('bc').onclick = () => { setC(!cOn); toast(cOn ? 'Carreteras visibles' : 'Carreteras ocultas'); }; $('bc').classList.toggle('on', cOn);
+addEventListener('resize', drawRoads);
+if (!hashLoad()) fit(); render(); drawRects(); placePins(); drawRoutes(); drawLabels(); drawRoads();
 </script></body></html>
