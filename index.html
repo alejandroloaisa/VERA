@@ -73,6 +73,8 @@ button{font:inherit}
 #pcard{flex-direction:column;align-items:stretch!important;width:min(380px,calc(100vw - 86px));max-height:45vh;overflow:auto}#pci b{font-size:14px;display:block;margin-bottom:3px}#pci p{margin:0;font-size:13px;line-height:1.45;opacity:.9}#pci p:empty{display:none}.pcb{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}#pcard .btn{height:34px;font-size:13px;padding:0 10px;display:inline-flex;align-items:center;text-decoration:none}
 #leg footer{padding:8px;border-top:1px solid rgba(255,255,255,.1)}#leg footer .btn{width:100%;height:36px;font-size:13px}
 .pi em{font-style:normal;opacity:.6;font-size:11px;margin-left:4px}
+#lb{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:901}
+#h{max-width:calc(100vw - 24px);overflow-x:auto}@media(max-width:520px){#h{gap:4px;padding:5px}#h button{padding:0 7px;font-size:13px;min-width:36px;white-space:nowrap}}
 #rt{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:900}
 #rpan{display:none;right:12px;top:78px;max-height:38vh;width:min(290px,calc(100vw - 24px));max-height:46vh;overflow:auto;padding:8px;z-index:6}#rpan.open{display:block}
 #rpan.min #rlist,#rpan.min small{display:none}#rpan.min{width:auto}#rpan.min header{padding:0;gap:8px}#rpan.min header>span:first-child{display:none}
@@ -81,10 +83,10 @@ button{font:inherit}
 .ri.off{opacity:.45}.ri b{display:block;font-size:13.5px}.ri small{opacity:.8}
 </style></head><body>
 <div id="vp"><div id="map"></div></div><div id="rub"></div>
-<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v18</small></div>
-<div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp">📍 Lugares</button><button id="br">🥾 Rutas</button><button id="bm">✎ Marcar</button><button id="bl">☰ <span id="cnt">0</span></button></div>
+<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v19</small></div>
+<div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp">📍 Lugares</button><button id="br">🥾 Rutas</button><button id="bt" aria-label="Parajes (nombres)">🏷 Parajes</button><button id="bm">✎ Marcar</button><button id="bl">☰ <span id="cnt">0</span></button></div>
 <div id="leg" class="p"><header><span>Lugares · leyenda</span><button class="btn" id="lc" aria-label="Cerrar">✕</button></header><div id="chips"></div><div id="plist"></div><footer><button class="btn" id="pexp">Copiar mis puntos</button></footer></div>
-<canvas id="rt"></canvas><div id="rpan" class="p"><header><span>Rutas y senderos</span><span><button class="btn" id="rm" aria-label="Ocultar lista">▲</button> <button class="btn" id="rc" aria-label="Cerrar">✕</button></span></header><div id="rlist"></div><small style="opacity:.7;display:block;padding:6px 4px 0;font-size:11px">Wikiloc (autores citados) y OpenStreetMap · tiempos orientativos · toca: ver/ocultar · mantén pulsado: ir</small></div><div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
+<canvas id="rt"></canvas><canvas id="lb"></canvas><div id="rpan" class="p"><header><span>Rutas y senderos</span><span><button class="btn" id="rm" aria-label="Ocultar lista">▲</button> <button class="btn" id="rc" aria-label="Cerrar">✕</button></span></header><div id="rlist"></div><small style="opacity:.7;display:block;padding:6px 4px 0;font-size:11px">Wikiloc (autores citados) y OpenStreetMap · tiempos orientativos · toca: ver/ocultar · mantén pulsado: ir</small></div><div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
 <footer><button class="btn" id="copy">Copiar marcas</button><textarea id="out" readonly></textarea><button class="btn" id="clr">Borrar todas</button></footer></div>
 <div id="dlg"><div class="box"><div style="font-weight:600">Marca <span id="dn"></span>: ¿qué hay que cambiar?</div>
 <textarea id="note" placeholder="Ej.: este edificio es más bajo, tejado a cuatro aguas…"></textarea>
@@ -100,7 +102,7 @@ button{font:inherit}
 <div id="perr"></div>
 <div class="row"><button class="btn del" id="pdel" style="display:none">Borrar</button><button class="btn" id="pcan">Cancelar</button><button class="btn pri" id="psave">Guardar</button></div></div></div>
 <div id="toast" class="p"></div>
-<script src="mapa.js?v=5"></script><script src="pois.js?v=7"></script><script src="rutas.js?v=5"></script>
+<script src="mapa.js?v=5"></script><script src="pois.js?v=7"></script><script src="rutas.js?v=5"></script><script src="parajes.js?v=1"></script>
 <script>
 const M = window.__M, W = M.W, H = M.H;
 const $ = id => document.getElementById(id), vp = $('vp'), map = $('map');
@@ -351,5 +353,21 @@ function goRoute(r) { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const g
 function setR(v) { rOn = v; $('br').classList.toggle('on', v); $('rpan').classList.toggle('open', v); drawRoutes(); try { localStorage.setItem('rutas-on', v ? '1' : '0'); } catch (e) {} }
 $('br').onclick = () => { setR(!rOn); if (rOn) toast('Rutas visibles'); }; $('rc').onclick = () => setR(false); $('rm').onclick = () => { const m = $('rpan').classList.toggle('min'); $('rm').textContent = m ? '🥾 ▼' : '▲'; }; rList();
 addEventListener('resize', drawRoutes);
-if (!hashLoad()) fit(); render(); drawRects(); placePins(); drawRoutes();
+
+const LB = window.__L || [], lc_ = $('lb'), lx = lc_.getContext('2d'); let lOn = false;
+try { lOn = localStorage.getItem('parajes-on') === '1'; } catch (e) {}
+function drawLabels() { const dpr = devicePixelRatio || 1, w = innerWidth, h = innerHeight;
+  if (lc_.width !== w * dpr || lc_.height !== h * dpr) { lc_.width = w * dpr; lc_.height = h * dpr; }
+  lx.setTransform(dpr, 0, 0, dpr, 0, 0); lx.clearRect(0, 0, w, h); if (!lOn || s < 0.45) return;
+  const fs = Math.max(10, Math.min(15, 8.5 + s * 3.5)); lx.font = 'italic 600 ' + fs + 'px Georgia,"Times New Roman",serif'; lx.textAlign = 'center'; lx.textBaseline = 'middle'; lx.lineJoin = 'round'; lx.lineWidth = 3.4;
+  const boxes = []; const pad = 3;
+  for (const l of LB) { if (l[3] !== 1) continue; const X = tx + l[1] * s, Y = ty + l[2] * s; if (X < -80 || X > w + 80 || Y < -20 || Y > h + 20) continue;
+    const tw = lx.measureText(l[0]).width, bx = X - tw / 2 - pad, by = Y - fs / 2 - pad, bw = tw + 2 * pad, bh = fs + 2 * pad; let hit = false;
+    for (const b of boxes) if (bx < b[0] + b[2] && bx + bw > b[0] && by < b[1] + b[3] && by + bh > b[1]) { hit = true; break; } if (hit) continue; boxes.push([bx, by, bw, bh]);
+    lx.strokeStyle = 'rgba(28,22,12,.85)'; lx.strokeText(l[0], X, Y); lx.fillStyle = '#fff6d8'; lx.fillText(l[0], X, Y); } }
+const _sl2 = scaleLabels; scaleLabels = function () { _sl2(); drawLabels(); };
+function setL(v) { lOn = v; $('bt').classList.toggle('on', v); try { localStorage.setItem('parajes-on', v ? '1' : '0'); } catch (e) {} drawLabels(); }
+$('bt').onclick = () => { setL(!lOn); toast(lOn ? (s < 0.45 ? 'Parajes activados · acerca el mapa para verlos' : 'Parajes visibles') : 'Parajes ocultos'); }; $('bt').classList.toggle('on', lOn);
+addEventListener('resize', drawLabels);
+if (!hashLoad()) fit(); render(); drawRects(); placePins(); drawRoutes(); drawLabels();
 </script></body></html>
