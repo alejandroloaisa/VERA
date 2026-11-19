@@ -75,15 +75,16 @@ button{font:inherit}
 .pi em{font-style:normal;opacity:.6;font-size:11px;margin-left:4px}
 #rt{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:900}
 #rpan{display:none;right:12px;top:78px;max-height:38vh;width:min(290px,calc(100vw - 24px));max-height:46vh;overflow:auto;padding:8px;z-index:6}#rpan.open{display:block}
+#rpan.min #rlist,#rpan.min small{display:none}#rpan.min{width:auto}#rpan.min header{padding:0;gap:8px}#rpan.min header>span:first-child{display:none}
 #rpan header{display:flex;justify-content:space-between;align-items:center;font-weight:600;padding:2px 4px 6px}
 .ri{display:block;width:100%;text-align:left;border:0;background:rgba(255,255,255,.1);color:var(--paper);border-radius:9px;padding:7px 9px;margin-top:5px;cursor:pointer;font-size:13px;border-left:5px solid var(--c)}
 .ri.off{opacity:.45}.ri b{display:block;font-size:13.5px}.ri small{opacity:.8}
 </style></head><body>
 <div id="vp"><div id="map"></div></div><div id="rub"></div>
-<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v14</small></div>
+<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v15</small></div>
 <div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp">📍 Lugares</button><button id="br">🥾 Rutas</button><button id="bm">✎ Marcar</button><button id="bl">☰ <span id="cnt">0</span></button></div>
 <div id="leg" class="p"><header><span>Lugares · leyenda</span><button class="btn" id="lc" aria-label="Cerrar">✕</button></header><div id="chips"></div><div id="plist"></div><footer><button class="btn" id="pexp">Copiar mis puntos</button></footer></div>
-<canvas id="rt"></canvas><div id="rpan" class="p"><header><span>Rutas y senderos</span><button class="btn" id="rc" aria-label="Cerrar">✕</button></header><div id="rlist"></div><small style="opacity:.7;display:block;padding:6px 4px 0;font-size:11px">Trazados de OpenStreetMap · tiempos orientativos · toca: ver/ocultar · mantén pulsado: ir</small></div><div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
+<canvas id="rt"></canvas><div id="rpan" class="p"><header><span>Rutas y senderos</span><span><button class="btn" id="rm" aria-label="Ocultar lista">▲</button> <button class="btn" id="rc" aria-label="Cerrar">✕</button></span></header><div id="rlist"></div><small style="opacity:.7;display:block;padding:6px 4px 0;font-size:11px">Trazados de OpenStreetMap · tiempos orientativos · toca: ver/ocultar · mantén pulsado: ir</small></div><div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
 <footer><button class="btn" id="copy">Copiar marcas</button><textarea id="out" readonly></textarea><button class="btn" id="clr">Borrar todas</button></footer></div>
 <div id="dlg"><div class="box"><div style="font-weight:600">Marca <span id="dn"></span>: ¿qué hay que cambiar?</div>
 <textarea id="note" placeholder="Ej.: este edificio es más bajo, tejado a cuatro aguas…"></textarea>
@@ -99,7 +100,7 @@ button{font:inherit}
 <div id="perr"></div>
 <div class="row"><button class="btn del" id="pdel" style="display:none">Borrar</button><button class="btn" id="pcan">Cancelar</button><button class="btn pri" id="psave">Guardar</button></div></div></div>
 <div id="toast" class="p"></div>
-<script src="mapa.js?v=4"></script><script src="pois.js?v=6"></script><script src="rutas.js?v=2"></script>
+<script src="mapa.js?v=4"></script><script src="pois.js?v=6"></script><script src="rutas.js?v=3"></script>
 <script>
 const M = window.__M, W = M.W, H = M.H;
 const $ = id => document.getElementById(id), vp = $('vp'), map = $('map');
@@ -348,7 +349,7 @@ function rList() { const L = $('rlist'); L.innerHTML = ''; for (const r of RT) {
 function goRoute(r) { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const g of r.segs) for (const p of g.pts) { if (!p[2]) continue; x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
   if (x0 > x1) return; s = Math.max(MIN(), Math.min(MAX, 0.85 * Math.min(innerWidth / (x1 - x0 + 40), innerHeight / (y1 - y0 + 40)))); tx = innerWidth / 2 - (x0 + x1) / 2 * s; ty = innerHeight / 2 - (y0 + y1) / 2 * s; apply(); }
 function setR(v) { rOn = v; $('br').classList.toggle('on', v); $('rpan').classList.toggle('open', v); drawRoutes(); try { localStorage.setItem('rutas-on', v ? '1' : '0'); } catch (e) {} }
-$('br').onclick = () => { setR(!rOn); if (rOn) toast('Rutas visibles'); }; $('rc').onclick = () => setR(false); rList();
+$('br').onclick = () => { setR(!rOn); if (rOn) toast('Rutas visibles'); }; $('rc').onclick = () => setR(false); $('rm').onclick = () => { const m = $('rpan').classList.toggle('min'); $('rm').textContent = m ? '🥾 ▼' : '▲'; }; rList();
 addEventListener('resize', drawRoutes);
 if (!hashLoad()) fit(); render(); drawRects(); placePins(); drawRoutes();
 </script></body></html>
