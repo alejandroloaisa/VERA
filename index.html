@@ -85,10 +85,11 @@ button{font:inherit}
 #rpan header{display:flex;justify-content:space-between;align-items:center;font-weight:600;padding:2px 4px 6px}
 .ri{display:block;width:100%;text-align:left;border:0;background:rgba(255,255,255,.1);color:var(--paper);border-radius:9px;padding:7px 9px;margin-top:5px;cursor:pointer;font-size:13px;border-left:5px solid var(--c)}
 .ri.off{opacity:.45}.ri b{display:block;font-size:13.5px}.ri small{opacity:.8}
+body.n{background:#09111f!important}
 </style></head><body>
 <div id="vp"><div id="map"></div></div><div id="rub"></div>
-<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v25</small></div>
-<div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp" aria-label="Lugares">📍<span class="tx"> Lugares</span></button><button id="br" aria-label="Rutas">🥾<span class="tx"> Rutas</span></button><button id="bt" aria-label="Parajes (nombres)">🏷<span class="tx"> Parajes</span></button><button id="bm" aria-label="Marcar">✎<span class="tx"> Marcar</span></button><button id="bl">☰ <span id="cnt">0</span></button></div>
+<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v26</small></div>
+<div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp" aria-label="Lugares">📍<span class="tx"> Lugares</span></button><button id="br" aria-label="Rutas">🥾<span class="tx"> Rutas</span></button><button id="bt" aria-label="Parajes (nombres)">🏷<span class="tx"> Parajes</span></button><button id="bn" aria-label="Modo noche">☾</button><button id="bm" aria-label="Marcar">✎<span class="tx"> Marcar</span></button><button id="bl">☰ <span id="cnt">0</span></button></div>
 <div id="leg" class="p"><header><span>Lugares · leyenda</span><button class="btn" id="lc" aria-label="Cerrar">✕</button></header><div id="chips"></div><div id="plist"></div><footer><button class="btn" id="pexp">Copiar mis puntos</button></footer></div>
 <canvas id="rt"></canvas><canvas id="lb"></canvas><div id="rpan" class="p"><header><span>Rutas y senderos</span><span><button class="btn" id="rm" aria-label="Ocultar lista">▲</button> <button class="btn" id="rc" aria-label="Cerrar">✕</button></span></header><div id="rlist"></div><small style="opacity:.7;display:block;padding:6px 4px 0;font-size:11px">Wikiloc (autores citados) y OpenStreetMap · tiempos orientativos · toca: ver/ocultar · ⓘ: ficha</small></div><div id="rcard" class="p"></div><div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
 <footer><button class="btn" id="copy">Copiar marcas</button><textarea id="out" readonly></textarea><button class="btn" id="clr">Borrar todas</button></footer></div>
@@ -115,6 +116,7 @@ let s = 1, tx = 0, ty = 0;
 const MIN = () => Math.min(innerWidth / W, innerHeight / H) * 0.95, MAX = 8;
 const cache = new Map();                       // clave -> Image (decodificada a 512 px, nunca escalada en memoria)
 const DPR = Math.min(window.devicePixelRatio || 1, 2);
+let NIGHT = false; try { NIGHT = localStorage.getItem('noche') === '1'; } catch (e) {} document.body.classList.toggle('n', NIGHT);
 const cv = document.createElement('canvas'); cv.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%'; map.appendChild(cv);
 const ctx = cv.getContext('2d');
 function resizeCanvas() { cv.width = Math.round(innerWidth * DPR); cv.height = Math.round(innerHeight * DPR); }
@@ -140,10 +142,10 @@ function lod() {
     for (const t of tilesFor(L, Math.min(L.levels.length - 1, lv + 2), x0, y0, x1, y1)) want.add(t.key);   // respaldo grueso
     for (const t of tilesFor(L, lv, x0, y0, x1, y1)) {
       want.add(t.key);
-      if (!cache.has(t.key)) { const im = new Image(); im.onload = reqDraw; im.src = `t/${t.key}.webp`; cache.set(t.key, im); }
+      if (!cache.has(t.key)) { const im = new Image(); im.onload = reqDraw; im.src = `${NIGHT ? 'tn' : 't'}/${t.key}.webp`; cache.set(t.key, im); }
     }
   });
-  for (const k of want) if (!cache.has(k)) { const im = new Image(); im.onload = reqDraw; im.src = `t/${k}.webp`; cache.set(k, im); }
+  for (const k of want) if (!cache.has(k)) { const im = new Image(); im.onload = reqDraw; im.src = `${NIGHT ? 'tn' : 't'}/${k}.webp`; cache.set(k, im); }
   if (cache.size > 90) for (const [k, im] of cache) if (!want.has(k)) { im.onload = null; im.src = ''; cache.delete(k); }
   draw();
 }
@@ -382,5 +384,9 @@ const _sl2 = scaleLabels; scaleLabels = function () { _sl2(); drawLabels(); };
 function setL(v) { lOn = v; $('bt').classList.toggle('on', v); try { localStorage.setItem('parajes-on', v ? '1' : '0'); } catch (e) {} drawLabels(); }
 $('bt').onclick = () => { setL(!lOn); toast(lOn ? 'Parajes visibles · acerca para ver más' : 'Parajes ocultos'); }; $('bt').classList.toggle('on', lOn);
 addEventListener('resize', drawLabels);
+
+$('bn').textContent = NIGHT ? '☀' : '☾';
+$('bn').onclick = () => { NIGHT = !NIGHT; try { localStorage.setItem('noche', NIGHT ? '1' : '0'); } catch (e) {} document.body.classList.toggle('n', NIGHT); $('bn').textContent = NIGHT ? '☀' : '☾'; $('bn').classList.toggle('on', NIGHT);
+  for (const [k, im] of cache) { im.onload = null; } cache.clear(); lod(); toast(NIGHT ? 'Modo noche' : 'Modo día'); };
 if (!hashLoad()) fit(); render(); drawRects(); placePins(); drawRoutes(); drawLabels();
 </script></body></html>
