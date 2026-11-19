@@ -59,9 +59,9 @@ button{font:inherit}
 #plist h4 u{width:9px;height:9px;border-radius:50%;background:var(--c)}
 .pi{padding:7px 8px;font-size:13px;border-radius:8px;cursor:pointer;display:flex;gap:8px;align-items:center}.pi:hover,.pi.sel{background:rgba(255,255,255,.14)}
 .pi u{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
-#eye{right:12px;bottom:calc(84px + env(safe-area-inset-bottom));width:46px;height:46px;border:0;padding:0;display:grid;place-items:center;color:var(--paper);cursor:pointer;z-index:5}#eye.off{background:var(--acc)}#eye svg{width:24px;height:24px}
+#eye{display:none!important;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));width:46px;height:46px;border:0;padding:0;display:grid;place-items:center;color:var(--paper);cursor:pointer;z-index:5}#eye.off{background:var(--acc)}#eye svg{width:24px;height:24px}
 
-#ba{right:12px;bottom:calc(138px + env(safe-area-inset-bottom));width:46px;height:46px;border:0;padding:0;display:grid;place-items:center;color:var(--paper);cursor:pointer;z-index:5;font-size:30px;line-height:1}#ba.on{background:var(--acc)}
+#ba{right:12px;bottom:calc(84px + env(safe-area-inset-bottom));width:46px;height:46px;border:0;padding:0;display:grid;place-items:center;color:var(--paper);cursor:pointer;z-index:5;font-size:30px;line-height:1}#ba.on{background:var(--acc)}
 #pdlg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;place-items:center;z-index:50}#pdlg.on{display:grid}
 #pdlg .box{background:var(--paper);color:var(--ink);border-radius:14px;padding:14px;width:min(360px,92vw);max-height:92vh;overflow:auto}
 #pdlg label{display:block;font-size:12px;margin:8px 0 3px;opacity:.75}
@@ -94,7 +94,7 @@ button{font:inherit}
 .pin.lg b{left:22px;top:-56px}
 </style></head><body>
 <div id="vp"><div id="map"></div></div><div id="rub"></div>
-<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v34</small></div>
+<div id="t" class="p">Jarandilla y Guijo · La Vera<small>mapa isométrico · pixel art · © 2026 Alejandro Loaisa · LOAISA STUDIO · v35</small></div>
 <div id="h" class="p"><button id="zi" aria-label="Acercar">+</button><button id="zo" aria-label="Alejar">−</button><button id="zf" aria-label="Ver todo">⤢</button><button id="bp" aria-label="Lugares">📍<span class="tx"> Lugares</span></button><button id="br" aria-label="Rutas">🥾<span class="tx"> Rutas</span></button><button id="bc" aria-label="Carreteras">🛣<span class="tx"> Carreteras</span></button><button id="bt" aria-label="Parajes (nombres)">🏷<span class="tx"> Parajes</span></button><button id="bm" aria-label="Marcar">✎<span class="tx"> Marcar</span></button><button id="bl">☰ <span id="cnt">0</span></button></div>
 <div id="leg" class="p"><header><span>Lugares · leyenda</span><button class="btn" id="lc" aria-label="Cerrar">✕</button></header><div id="chips"></div><div id="plist"></div><footer><button class="btn" id="pexp">Copiar mis puntos</button></footer></div>
 <canvas id="cr"></canvas><canvas id="rt"></canvas><canvas id="lb"></canvas><div id="rpan" class="p"><header><span>Rutas y senderos</span><span><button class="btn" id="rm" aria-label="Ocultar lista">▲</button> <button class="btn" id="rc" aria-label="Cerrar">✕</button></span></header><div id="rlist"></div><small style="opacity:.7;display:block;padding:6px 4px 0;font-size:11px">Wikiloc (autores citados) y OpenStreetMap · tiempos orientativos · toca: ver/ocultar · ⓘ: ficha</small></div><div id="rcard" class="p"></div><div id="marks" class="p"><header><span>Marcas para Claude</span><button class="btn" id="mc" aria-label="Cerrar">✕</button></header><div id="list"></div>
@@ -338,7 +338,12 @@ const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 function setEye() { $('eye').innerHTML = hideAll ? EYE0 : EYE; $('eye').classList.toggle('off', hideAll); $('eye').title = hideAll ? 'Mostrar marcadores' : 'Ocultar marcadores'; placePins(); }
 $('eye').onclick = () => { hideAll = !hideAll; try { localStorage.setItem('pins-off', hideAll ? '1' : '0'); } catch (e) {} setEye(); toast(hideAll ? 'Marcadores ocultos' : 'Marcadores visibles'); };
 $('eye').addEventListener('pointerdown', e => e.stopPropagation()); setEye();
-$('bp').onclick = () => { $('marks').classList.remove('open'); $('leg').classList.toggle('open'); };
+function setP(v) { hideAll = !v; try { localStorage.setItem('pins-off', v ? '0' : '1'); } catch (e) {} $('bp').classList.toggle('on', v); if (!v) $('leg').classList.remove('open'); placePins(); }
+$('bp').onclick = () => { const lg = $('leg').classList;
+  if (hideAll) { setP(true); $('marks').classList.remove('open'); lg.add('open'); toast('Lugares visibles'); }
+  else if (!lg.contains('open')) { $('marks').classList.remove('open'); lg.add('open'); }
+  else { setP(false); toast('Lugares ocultos'); } };
+$('bp').classList.toggle('on', !hideAll);
 $('lc').onclick = () => $('leg').classList.remove('open');
 vp.addEventListener('pointerdown', e => { dn = [e.clientX, e.clientY]; });
 vp.addEventListener('click', e => { const d = dn ? Math.hypot(e.clientX - dn[0], e.clientY - dn[1]) : 99; if (d > 8) return;
